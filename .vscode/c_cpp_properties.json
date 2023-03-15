@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-clang-x64"
+        },
+        {
+            "name": "libdragon",
+            "includePath": [
+                "/home/dragorn421/Documents/libdragon/src",
+                "${N64_INST}/mips64-elf/include",
+                "${workspaceFolder}/**"
+            ],
+            "compilerPath": "${N64_INST}/bin/mips64-elf-gcc"
+        }
+    ],
+    "version": 4
+}
