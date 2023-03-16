@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:nayuki/QR-Code-generator.git
+	branch = master
+	commit = 2643e824eb15064662e6c4d99b010740275a0be1
+	parent = d1526057d958e9807226fecb2b16e16af21db3e0
+	method = merge
+	cmdver = 0.4.5
