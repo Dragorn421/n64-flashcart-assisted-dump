@@ -4,7 +4,7 @@ all: romfile.z64
 BUILD_DIR = build
 include $(N64_INST)/include/n64.mk
 
-OBJS = $(BUILD_DIR)/main.o
+OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/QRCode/src/qrcode.o
 
 romfile.z64: N64_ROM_TITLE = "Flashcart Assisted Dump"
 

@@ -1,2 +1,4 @@
 build
 *.z64
+.vscode/launch.json
+.vscode/settings.json

@@ -1,6 +1,8 @@
 #include <libdragon.h>
 #include <string.h>
 
+#include "QRCode/src/qrcode.h"
+
 // start from libdragon/src/regs.S
 /* Standard Status Register bitmasks: */
 #define SR_CU1 0x20000000 /* Mark CP1 as usable */
@@ -50,6 +52,68 @@ void timer_callback(int ovfl)
             }
             printf("\n");
         }
+    }
+
+    // TODO should not be called while interrupts are disabled, yet called from a timer which is in a interrupt handler?
+    if (timer_i % 3 != 0)
+    {
+        console_render();
+    }
+    else
+    {
+
+        uint8_t buf_stringified[sizeof(buf) * 2 + 1] = {0};
+
+        {
+            char *buf_stringified_p = (char *)&buf_stringified[0];
+
+            for (int i = 0; i < sizeof(prev_buf); i++)
+            {
+                buf_stringified_p += sprintf(buf_stringified_p, "%02X", prev_buf[i]);
+            }
+
+            printf("%d \"%s\"\n", sizeof(buf_stringified), (char *)buf_stringified);
+        }
+
+        surface_t *surf = NULL;
+        while (!(surf = display_lock()))
+            ;
+        {
+            graphics_fill_screen(surf, graphics_make_color(255, 0, 255, 255));
+
+            // The structure to manage the QR code
+            QRCode qrcode;
+
+            {
+                // Allocate a chunk of memory to store the QR code
+                uint8_t qrcodeBytes[qrcode_getBufferSize(7)];
+
+                qrcode_initBytes(&qrcode, qrcodeBytes, 7, ECC_LOW, buf_stringified, sizeof(buf_stringified));
+            }
+
+            {
+                int offX = 10, offY = 10;
+                int elemW = 10, elemH = 5;
+
+                for (int y = 0; y < qrcode.size; y++)
+                {
+                    for (int x = 0; x < qrcode.size; x++)
+                    {
+                        uint32_t color;
+                        if (qrcode_getModule(&qrcode, x, y))
+                        {
+                            color = graphics_make_color(0, 0, 0, 255);
+                        }
+                        else
+                        {
+                            color = graphics_make_color(255, 255, 255, 255);
+                        }
+                        graphics_draw_box(surf, offX + x * elemW, offY + y * elemH, elemW, elemH, color);
+                    }
+                }
+            }
+        }
+        display_show(surf);
     }
 }
 
@@ -118,7 +182,7 @@ void return_from_watch_exception(void)
 int main(void)
 {
     console_init();
-    console_set_render_mode(RENDER_AUTOMATIC);
+    console_set_render_mode(RENDER_MANUAL);
     timer_init();
 
     C0_WRITE_WATCHLO(0);
@@ -126,7 +190,7 @@ int main(void)
 
     new_timer(TICKS_FROM_MS(2000), TF_CONTINUOUS, timer_callback);
 
-    register_reset_handler(my_reset_handler);
+    register_RESET_handler(my_reset_handler);
     register_exception_handler(my_exception_handler);
 
     printf("main C0_STATUS() = 0x%08lX\n", C0_STATUS());

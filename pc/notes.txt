@@ -1,0 +1,5 @@
+# convert debug_buf_out.bin to png:
+ffmpeg -f rawvideo -pix_fmt gray -video_size 480x320 -i debug_buf_out.bin -y yo.png
+
+# play (grayscale'd) video with ffmpeg+ffplay
+ffmpeg -s 480x320 -i /dev/video0 -f rawvideo -pix_fmt gray - | ffplay -video_size 480x320 -f rawvideo -pixel_format gray -
