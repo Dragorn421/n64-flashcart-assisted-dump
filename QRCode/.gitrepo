@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:ricmoo/QRCode.git
+	branch = master
+	commit = eafbde494979abc2445c363cc2602230bcbe299c
+	parent = efa905b1d88922c3b7f32ac94ad39ae76e214a04
+	method = merge
+	cmdver = 0.4.5
