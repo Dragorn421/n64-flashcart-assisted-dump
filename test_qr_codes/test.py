@@ -4,13 +4,17 @@ import ctypes
 ROOT = Path(__file__).parent
 
 
-def do_generate(payload: bytes):
+PRINT_CODE = False
+
+
+def do_generate(payload: bytes, version: int):
 
     generate = ctypes.CDLL(ROOT / "generate.so")
-    # int32_t generate(char *data, uint8_t *buf, size_t buf_size, int32_t *width, int32_t *height)
+    # int32_t generate(char *data, uint8_t version, uint8_t *buf, size_t buf_size, int32_t *width, int32_t *height)
     generate.generate.restype = ctypes.c_int32
     generate.generate.argtypes = [
         ctypes.c_char_p,
+        ctypes.c_uint8,
         ctypes.POINTER(ctypes.c_uint8),
         ctypes.c_size_t,
         ctypes.POINTER(ctypes.c_int32),
@@ -22,6 +26,7 @@ def do_generate(payload: bytes):
     height = ctypes.c_int32()
     generate_res = generate.generate(
         ctypes.create_string_buffer(payload),
+        version,
         buf,
         len(buf),
         ctypes.byref(width),
@@ -31,6 +36,42 @@ def do_generate(payload: bytes):
     assert generate_res == 0
 
     return bytes(buf[: width.value * height.value]), width.value, height.value
+
+
+def enlarge(image_buf, image_width, image_height, *, n_pad=0, int_scale=1):
+    lines = [
+        image_buf[i : i + image_width] for i in range(0, len(image_buf), image_width)
+    ]
+    enlarged_image_width = int_scale * image_width + 2 * n_pad
+    enlarged_image_height = int_scale * image_height + 2 * n_pad
+
+    pad_updown = b"\xFF" * enlarged_image_width
+    pad_leftright = b"\xFF" * n_pad
+
+    enlarged_lines = []
+    enlarged_lines += [pad_updown] * n_pad
+    for line in lines:
+        enlarged_line = b""
+        enlarged_line += pad_leftright
+        for b in line:
+            enlarged_line += bytes([b] * int_scale)
+        enlarged_line += pad_leftright
+        enlarged_lines.extend([enlarged_line] * int_scale)
+    enlarged_lines += [pad_updown] * n_pad
+
+    enlarged_image_buf = b"".join(enlarged_lines)
+
+    if PRINT_CODE:
+        print("enlarged_image_buf =")
+        for y in range(enlarged_image_height):
+            for x in range(enlarged_image_width):
+                print(
+                    "  " if enlarged_image_buf[y * enlarged_image_width + x] else "##",
+                    end="",
+                )
+            print("\n", end="")
+
+    return enlarged_image_buf, enlarged_image_width, enlarged_image_height
 
 
 def do_scan(
@@ -63,21 +104,30 @@ def do_scan(
     return bytes(out_payload_buf[: out_payload_buf[:].index(0)])
 
 
-def main():
+def test_roundtrip_payload(initial_payload, *, version=3, n_pad=0, int_scale=1):
+
+    print(
+        ">test_roundtrip_payload",
+        "initial_payload =",
+        initial_payload,
+        "version =",
+        version,
+    )
 
     #
     # generate
     #
 
-    gen_buf, gen_width, gen_height = do_generate(b"hello world")
+    gen_buf, gen_width, gen_height = do_generate(initial_payload, version)
     print(gen_width)
     print(gen_height)
     print(gen_buf[:100])
 
-    for y in range(gen_height):
-        for x in range(gen_width):
-            print("##" if gen_buf[y * gen_width + x] else "  ", end="")
-        print("\n", end="")
+    if PRINT_CODE:
+        for y in range(gen_height):
+            for x in range(gen_width):
+                print("##" if gen_buf[y * gen_width + x] else "  ", end="")
+            print("\n", end="")
 
     #
     # process/dump
@@ -88,55 +138,12 @@ def main():
     image_width = gen_width
     image_height = gen_height
 
-    def enlarge(image_buf, image_width, image_height, *, n_pad=0, int_scale=1):
-        lines = [
-            image_buf[i : i + gen_width] for i in range(0, len(image_buf), gen_width)
-        ]
-        enlarged_image_width = int_scale * image_width + 2 * n_pad
-        enlarged_image_height = int_scale * image_height + 2 * n_pad
-
-        pad_updown = b"\xFF" * enlarged_image_width
-        pad_leftright = b"\xFF" * n_pad
-
-        enlarged_lines = []
-        enlarged_lines += [pad_updown] * n_pad
-        for line in lines:
-            enlarged_line = b""
-            enlarged_line += pad_leftright
-            for b in line:
-                enlarged_line += bytes([b] * int_scale)
-            enlarged_line += pad_leftright
-            enlarged_lines.extend([enlarged_line] * int_scale)
-        enlarged_lines += [pad_updown] * n_pad
-
-        enlarged_image_buf = b"".join(enlarged_lines)
-
-        if False:
-            print("enlarged_lines =")
-            print(enlarged_lines)
-            for i, line in enumerate(enlarged_lines):
-                print(f"{i:3} ", end="")
-                for b in line:
-                    print("  " if b else "##", end="")
-                print()
-
-        print("enlarged_image_buf =")
-        for y in range(enlarged_image_height):
-            for x in range(enlarged_image_width):
-                print(
-                    "  " if enlarged_image_buf[y * enlarged_image_width + x] else "##",
-                    end="",
-                )
-            print("\n", end="")
-
-        return enlarged_image_buf, enlarged_image_width, enlarged_image_height
-
     image_buf, image_width, image_height = enlarge(
         image_buf,
         image_width,
         image_height,
-        n_pad=1,
-        int_scale=1,
+        n_pad=n_pad,
+        int_scale=int_scale,
     )
 
     # convert to png:
@@ -148,8 +155,27 @@ def main():
     # scan
     #
 
-    payload = do_scan(image_buf, image_width, image_height)
-    print(payload)
+    scanned_payload = do_scan(image_buf, image_width, image_height)
+    print(scanned_payload)
+
+    assert initial_payload == scanned_payload
+
+
+def main():
+    max_sizes_by_version = dict()
+    for version in [6]:  # range(1, 40 + 1):
+        for i in range(100):
+            try:
+                test_roundtrip_payload(
+                    b"a" * i,
+                    version=version,
+                    n_pad=20,
+                    int_scale=3,
+                )
+            except:
+                max_sizes_by_version[version] = i - 1
+                break
+    print(max_sizes_by_version)
 
 
 if __name__ == "__main__":

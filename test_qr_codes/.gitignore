@@ -1,3 +1,5 @@
 *.so
 qr.bin
 yo.png
+.venv
+__pycache__

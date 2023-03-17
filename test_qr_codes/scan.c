@@ -11,26 +11,31 @@ enum
     ERR_MEM2,
     ERR_BUF_TOO_SMALL,
     ERR_NO_CODE,
-    ERR_SEVERAL_CODES
+    ERR_SEVERAL_CODES,
+    ERR_DECODE_FAILED
 };
 
 int32_t scan(const uint8_t *image_buf, int32_t width, int32_t height, char *out_payload_buf, size_t out_payload_buf_size)
 {
-    printf("> scan.c scan\n");
-    for (int y = 0; y < width; y++)
+#define PRINT_CODE 0
+    if (PRINT_CODE)
     {
-        for (int x = 0; x < height; x++)
+        printf("> scan.c scan\n");
+        for (int y = 0; y < width; y++)
         {
-            if (image_buf[x + width * y])
+            for (int x = 0; x < height; x++)
             {
-                printf("  ");
+                if (image_buf[x + width * y])
+                {
+                    printf("  ");
+                }
+                else
+                {
+                    printf("##");
+                }
             }
-            else
-            {
-                printf("##");
-            }
+            printf("\n");
         }
-        printf("\n");
     }
 
     struct quirc *qr;
@@ -86,7 +91,10 @@ int32_t scan(const uint8_t *image_buf, int32_t width, int32_t height, char *out_
         /* Decoding stage */
         err = quirc_decode(&code, &data);
         if (err)
+        {
             printf("DECODE FAILED: %s\n", quirc_strerror(err));
+            return ERR_DECODE_FAILED;
+        }
         else
         {
             printf("Data: %s\n", data.payload);

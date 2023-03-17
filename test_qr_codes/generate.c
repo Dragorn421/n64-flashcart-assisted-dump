@@ -9,12 +9,12 @@ enum
     ERR_BUF_TOO_SMALL
 };
 
-int32_t generate(char *data, uint8_t *buf, size_t buf_size, int32_t *width, int32_t *height)
+int32_t generate(char *data, uint8_t version, uint8_t *buf, size_t buf_size, int32_t *width, int32_t *height)
 {
     // The structure to manage the QR code
     QRCode qrcode;
 
-#define VERSION 3
+#define VERSION version
 
     // Allocate a chunk of memory to store the QR code
     uint8_t qrcodeBytes[qrcode_getBufferSize(VERSION)];
