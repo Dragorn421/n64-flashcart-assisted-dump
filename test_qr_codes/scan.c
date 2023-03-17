@@ -16,6 +16,23 @@ enum
 
 int32_t scan(const uint8_t *image_buf, int32_t width, int32_t height, char *out_payload_buf, size_t out_payload_buf_size)
 {
+    printf("> scan.c scan\n");
+    for (int y = 0; y < width; y++)
+    {
+        for (int x = 0; x < height; x++)
+        {
+            if (image_buf[x + width * y])
+            {
+                printf("  ");
+            }
+            else
+            {
+                printf("##");
+            }
+        }
+        printf("\n");
+    }
+
     struct quirc *qr;
 
     qr = quirc_new();
