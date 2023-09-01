@@ -1,2 +1,7 @@
 build
 *.z64
+
+.venv
+
+# Ignore build files from qrencode
+qrencode

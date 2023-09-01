@@ -3,18 +3,19 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/home/dragorn421/Documents/emsdk/upstream/emscripten/system/include/"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "c++14",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "linux-gcc-x64"
         },
         {
             "name": "libdragon",
             "includePath": [
-                "/home/dragorn421/Documents/libdragon/src",
+                "/home/dragorn421/Documents/libragon/src",
                 "${N64_INST}/mips64-elf/include",
                 "${workspaceFolder}/**"
             ],

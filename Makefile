@@ -4,7 +4,10 @@ all: romfile.z64
 BUILD_DIR = build
 include $(N64_INST)/include/n64.mk
 
-OBJS = $(BUILD_DIR)/main.o
+OBJS_DEPS = qrencode/.libs/libqrencode.a
+
+SRC_FILES = main.c cpu_utils.c
+OBJS = $(addprefix $(BUILD_DIR)/,$(SRC_FILES:.c=.o)) $(OBJS_DEPS)
 
 romfile.z64: N64_ROM_TITLE = "Flashcart Assisted Dump"
 
